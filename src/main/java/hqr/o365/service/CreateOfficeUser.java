@@ -45,26 +45,29 @@ public class CreateOfficeUser {
 	@Autowired
 	private TaMasterCdRepo tmr;
 	
+	@Autowired
+	private GetOrganizationInfo goi;
+	
 	@Value("${UA}")
     private String ua;
 	
-	public HashMap<String, String> createCommonUser(String mailNickname, String userPrincipalName, String displayName, String licenses){
+	public HashMap<String, String> createCommonUser(String mailNickname, String userPrincipalName, String displayName, String licenses, String userPwd){
 		HashMap<String, String> map = new HashMap<String, String>();
-		String password = "Mjj@1234";
-		Optional<TaMasterCd> opt = tmr.findById("DEFAULT_PASSWORD");
+		String forceInd = "Y";
+		Optional<TaMasterCd> opt = tmr.findById("FORCE_CHANGE_PASSWORD");
 		if(opt.isPresent()) {
 			TaMasterCd cd = opt.get();
-			password = cd.getCd();
+			forceInd = cd.getCd();
 		}
 
 		OfficeUser ou = new OfficeUser();
 		ou.setMailNickname(mailNickname);
 		ou.setUserPrincipalName(userPrincipalName);
 		ou.setDisplayName(displayName);
-		ou.getPasswordProfile().setPassword(password);
-		
-		String createUserJson = JSON.toJSONString(ou);
-		
+		ou.getPasswordProfile().setPassword(userPwd);
+		if(!"Y".equals(forceInd)) {
+			ou.getPasswordProfile().setForceChangePasswordNextSignIn(false);
+		}
 		String message = "";
 		
 		//get info
@@ -77,6 +80,10 @@ public class CreateOfficeUser {
 			}
 			
 			if(!"".equals(accessToken)) {
+				//set usage location
+				ou.setUsageLocation(goi.getUsageLocation(accessToken));
+				String createUserJson = JSON.toJSONString(ou);
+				
 				String endpoint = "https://graph.microsoft.com/v1.0/users";
 				HttpHeaders headers = new HttpHeaders();
 				headers.set(HttpHeaders.USER_AGENT, ua);

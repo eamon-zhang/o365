@@ -17,8 +17,8 @@
 			iconCls: 'icon-add',
 			modal : true,
 			closed : true,
-			width: 440,
-			height: 250,
+			width: 420,
+			height: 290,
 		    cache: false,
 		    href: 'tabs/dialogs/createUser.html'
 		});
@@ -299,7 +299,7 @@
 					}
 				}
 			},{
-				text:'收回',
+				text:'撤权',
 				iconCls:'icon-warning',
 				handler:function(){
 					row3 = $('#tb3').datagrid('getSelected');
@@ -382,8 +382,8 @@
 					$.messager.alert('帮助','<b>1.</b>请确保配置的可用性，可以在这里进行<a href=javascript:addPanel("Office配置")>Office配置</a>和切换全局<br>'+
 							'<b>2.</b>详情可以看到用户的订阅skuid和身份,skuid对应的产品名称可以在<a href=javascript:addPanel("查看许可证")>查看许可证</a>找到<br>' +
 							'<b>3.</b>启用和禁用用户只会对普通用户有效<br>'+
-							'<b>4.</b>提权和收回分别是提升一个用户为全局管理员和收回一个用户的全局管理员权限<br> '+
-							'<b>5.</b>默认新用户密码是Mjj@1234，你可以在<a href=javascript:addPanel("系统配置")>系统配置</a>中，通过修改DEFAULT_PASSWORD的值来自定义','');
+							'<b>4.</b>提权和撤权分别是提升一个用户为全局管理员和撤销一个用户的全局管理员权限<br> '+
+							'<b>5.</b>默认新用户密码是Mjj@1234，你也可以自己定义密码或者生成随机密码，同时在<a href=javascript:addPanel("系统配置")>系统配置</a>中，你可以通过修改FORCE_CHANGE_PASSWORD=N来避免用户登录时修改密码','');
 				}
 			}],
 			columns : [[
