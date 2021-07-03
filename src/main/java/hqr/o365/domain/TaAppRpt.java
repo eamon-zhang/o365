@@ -15,11 +15,13 @@ public class TaAppRpt {
 	private String tenantId;
 	private String appId;
 	private String secretId;
+	private String remarks;
 	private Date rptDt;
 	private String totalUser;
 	private String totalGlobalAdmin ;
 	private String enableGlobalAdmin ;
 	private String disableGloablAdmin ;
+	private String spo;
 	public int getSeqNo() {
 		return seqNo;
 	}
@@ -73,5 +75,17 @@ public class TaAppRpt {
 	}
 	public void setDisableGloablAdmin(String disableGloablAdmin) {
 		this.disableGloablAdmin = disableGloablAdmin;
+	}
+	public String getRemarks() {
+		return remarks;
+	}
+	public void setRemarks(String remarks) {
+		this.remarks = remarks;
+	}
+	public String getSpo() {
+		return spo;
+	}
+	public void setSpo(String spo) {
+		this.spo = spo;
 	}
 }

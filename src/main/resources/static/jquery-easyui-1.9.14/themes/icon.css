@@ -10,8 +10,17 @@
 .icon-medal{
 	background:url('icons/medal.png') no-repeat center center;
 }
+.icon-import{
+	background:url('icons/import.png') no-repeat center center;
+}
+.icon-export{
+	background:url('icons/export.png') no-repeat center center;
+}
 .icon-warning{
 	background:url('icons/warning.png') no-repeat center center;
+}
+.icon-massadd{
+	background:url('icons/massadd.png') no-repeat center center;
 }
 .icon-enable{
 	background:url('icons/enable.png') no-repeat center center;

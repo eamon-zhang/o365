@@ -7,6 +7,7 @@
 </head>
 <body>
 	<div id="tb1" ></div>
+	<div id="dlg6"></div>
 	<div id="dlg1" class="easyui-dialog" title="配置信息" style="padding:10px"
 			data-options="
 				iconCls: 'icon-add',
@@ -25,9 +26,9 @@
 						var selected = '否';
 						var seqNo = -1;
 					
-						if(row!=null){
-							seqNo = row.seqNo;
-							selected = row.selected;
+						if(row!=null&&row.length==1){
+							seqNo = row[0].seqNo;
+							selected = row[0].selected;
 							row = null;
 						}
 						
@@ -103,6 +104,18 @@
 	<script type="text/javascript" th:inline="none">
 		var row;
 
+		//create dialog
+		$('#dlg6').dialog({
+			title: '导入配置',
+			iconCls: 'icon-import',
+			modal : true,
+			closed : true,
+			width: 410,
+			height: 180,
+			cache: false,
+			href: 'tabs/dialogs/import.html'
+		});
+		
 		var toolbar = [{
 			text:'新增',
 			iconCls:'icon-add',
@@ -120,30 +133,24 @@
 			text:'删除',
 			iconCls:'icon-remove',
 			handler:function(){
-				row = $('#tb1').datagrid('getSelected');
-				if(row!=null){
-					var appId = row.appId;
+				row = $('#tb1').datagrid('getSelections');
+				if(row!=null&&row.length>0){
+					var seqNos = '';
+					for(var rr of row){
+						seqNos = seqNos + rr.seqNo + ',';
+					}
 					$.ajax({
 					    type : "POST", 
 					    url : "/delConfig",
-					    data : { "seqNo": row.seqNo },
+					    data : { "seqNos": seqNos },
 					    success : function(result) {
-						      if ( result ) {
-							      	$.messager.show({
-										title:'成功',
-										msg:'配置 '+appId+' 已成功被删除',
-										timeout:2000,
-										showType:'slide'
-									});
-							      	$('#tb1').datagrid('reload');
-							  } else { 
-							       	$.messager.show({
-										title:'失败',
-										msg:'删除配置失败，请重试',
-										timeout:2000,
-										showType:'slide'
-									}); 
-							  }
+					    	$.messager.show({
+								title:'提示',
+								msg: result,
+								timeout:2000,
+								showType:'slide'
+							});
+					      	$('#tb1').datagrid('reload');
 						},
 						error : function(){
 					       	$.messager.show({
@@ -159,7 +166,7 @@
 				else{
 					$.messager.show({
 						title:'错误',
-						msg:'请先选择一行',
+						msg:'请选择至少一行',
 						timeout:2000,
 						showType:'slide'
 					});
@@ -169,26 +176,26 @@
 			text:'修改',
 			iconCls:'icon-edit',
 			handler:function(){
-			    row = $('#tb1').datagrid('getSelected');
-				if(row!=null){
-					$('#userid').val(row.userId);
-					$('#passwd').val(row.passwd);
-					$('#tenantId').val(row.tenantId);
-					$('#appId').val(row.appId);
-					$('#secretId').val(row.secretId);
-					$('#remarks').val(row.remarks);
+			    row = $('#tb1').datagrid('getSelections');
+				if(row!=null&&row.length==1){
+					console.log(row[0]);
+					$('#userid').val(row[0].userId);
+					$('#passwd').val(row[0].passwd);
+					$('#tenantId').val(row[0].tenantId);
+					$('#appId').val(row[0].appId);
+					$('#secretId').val(row[0].secretId);
+					$('#remarks').val(row[0].remarks);
 					
 					$('#dlg1').dialog('open');
 				}
 				else{
 					$.messager.show({
 						title:'错误',
-						msg:'请先选择一行',
+						msg:'请选择一行',
 						timeout:2000,
 						showType:'slide'
 					});
 				}
-				
 			}
 		},{
 			text:'刷新',
@@ -197,18 +204,30 @@
 				$('#tb1').datagrid('reload');
 			}
 		},'-',{
+			text:'导入',
+			iconCls:'icon-import',
+			handler:function(){
+				$('#dlg6').dialog('open');
+			}
+		},{
+			text:'导出',
+			iconCls:'icon-export',
+			handler:function(){
+				window.location.href="/exportApps";
+			}
+		},'-',{
 			text:'切换全局',
 			iconCls:'icon-redo',
 			handler:function(){
-			    row = $('#tb1').datagrid('getSelected');
-				if(row!=null){
-					var userid = row.userId;
-					var passwd = row.passwd;
-					var tenantId = row.tenantId;
-					var appId = row.appId;
-					var secretId = row.secretId;
-					var remarks = row.remarks;
-					var seqNo = row.seqNo;
+			    row = $('#tb1').datagrid('getSelections');
+				if(row!=null&&row.length==1){
+					var userid = row[0].userId;
+					var passwd = row[0].passwd;
+					var tenantId = row[0].tenantId;
+					var appId = row[0].appId;
+					var secretId = row[0].secretId;
+					var remarks = row[0].remarks;
+					var seqNo = row[0].seqNo;
 					var selected = '是';
 					$.ajax({
 					    type : "POST", 
@@ -246,7 +265,7 @@
 				else{
 					$.messager.show({
 						title:'错误',
-						msg:'请先选择一行',
+						msg:'请选择一行',
 						timeout:2000,
 						showType:'slide'
 					});
@@ -256,13 +275,12 @@
 			text:'更新密钥',
 			iconCls:'icon-key',
 			handler:function(){
-			    row = $('#tb1').datagrid('getSelected');
-				if(row!=null){
-					console.log(row);
-					var seqNo = row.seqNo;
-					var tenantId = row.tenantId;
-					var appId = row.appId;
-					var secretId = row.secretId;
+			    row = $('#tb1').datagrid('getSelections');
+				if(row!=null&&row.length==1){
+					var seqNo = row[0].seqNo;
+					var tenantId = row[0].tenantId;
+					var appId = row[0].appId;
+					var secretId = row[0].secretId;
 					$.messager.confirm('更新', '将创建一个过期时间为2099-12-31的新密钥，成功后会替换现有密钥，若不想更改现有密钥，请取消', function(r){
 						if (r){
 							$.ajax({
@@ -294,7 +312,7 @@
 				else{
 					$.messager.show({
 						title:'错误',
-						msg:'请先选择一行',
+						msg:'请选择一行',
 						timeout:2000,
 						showType:'slide'
 					});
@@ -304,12 +322,12 @@
 			text:'校验',
 			iconCls:'icon-check',
 			handler:function(){
-			    row = $('#tb1').datagrid('getSelected');
-				if(row!=null){
+			    row = $('#tb1').datagrid('getSelections');
+				if(row!=null&&row.length==1){
 					$.ajax({
 					    type : "POST", 
 					    url : "/valiateAppInfo",
-					    data : { "tenantId": row.tenantId, "appId" : row.appId, "secretId" : row.secretId },
+					    data : { "tenantId": row[0].tenantId, "appId" : row[0].appId, "secretId" : row[0].secretId },
 					    success : function(result) {
 					    	if(result){
 						       	$.messager.show({
@@ -342,7 +360,7 @@
 				else{
 					$.messager.show({
 						title:'错误',
-						msg:'请先选择一行',
+						msg:'请选择一行',
 						timeout:2000,
 						showType:'slide'
 					});
@@ -354,7 +372,8 @@
 			handler:function(){
 				$.messager.alert('帮助','<b>1.</b>请设置一个当前全局为是的全局<br>'+
 						'<b>2.</b>更新后的密钥结束日期为2099-12-31<br>' +
-						'<b>3.</b>更新密钥后，请等待1分钟之后再校验，否则可能会失败<br>','');
+						'<b>3.</b>更新密钥后，请等待1分钟之后再校验，否则可能会失败<br>'+
+						'<b>4.</b>校验只是对于租户ID，APPID和密钥ID正确性的校验，并<font color=red>不包含</font>权限的校验','');
 			}
 		}];
 		
@@ -363,13 +382,14 @@
 			url : '/getConfig',
 			border : false,
 			fit : true,
-			singleSelect : true,
 			autoRowHeight : false,
 			pagination:true,
-			pageSize:10,
+			pageSize:100,
+			pageList : [100,200,500],
 			method:'post',
 			toolbar:toolbar,
 			columns : [[
+				{field : 'ck',title : '选中',align : 'center',checkbox: true}, 
 				{field : 'selected',title : '当前全局',align : 'center',
 					formatter: function(value,row,index){
 						return "<font size='2'>"+value+"</font>";

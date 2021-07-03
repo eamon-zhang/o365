@@ -8,30 +8,42 @@
 <body>
 	<table style="padding:10px">
 		<tr>
-			<td>名字：</td>
-			<td colSpan="2"><input id="displayName" class="easyui-textbox" data-options="required:true" style="width: 310px" ></td>
+			<td >数量：</td>
+			<td colSpan="2"><input id="count" class="easyui-textbox" data-options="required:true" style="width: 310px" ></td>
 		</tr>
 		<tr>
-			<td>邮箱：</td>
-			<td><input id="prefix" class="easyui-textbox" data-options="required:true" style="width: 90px" ></td>
-			<td>
-				<input id="cc1" name="dept" value="Loading..." style="width: 216px">
+			<td >前缀：</td>
+			<td colSpan="2"><input id="prefix1" class="easyui-textbox" data-options="required:true" style="width: 310px" ></td>
+		</tr>
+		<tr>
+			<td>策略：</td>
+			<td colSpan="2">
+				<select id="cc3" class="easyui-combobox" name="cc3" style="width:310px;" data-options="required:true,editable:false" >
+				    <option value="st1">前缀后附加5随机字符(0-9,a-z)</option>
+				    <option value="st2">前缀后附加自增长数字(补0且从0开始)</option>
+				</select>
+			</td>
+		</tr>
+		<tr>
+			<td >后缀：</td>
+			<td colSpan="2">
+				<input id="cc2" name="dept" value="Loading..." style="width: 310px">
 			</td>
 		</tr>
 		<tr>
 			<td>密码：</td>
 			<td colSpan="2">
-				<div id="userPwd" name="userPwd"></div>
+				<div id="userPwd2" name="userPwd2" ></div>
 				<!-- 
-				<input id="userPwd" name="userPwd" class="easyui-textbox" data-options="required:true,value:'Mjj@1234',iconCls:'icon-reload'" style="width: 310px"> 
+				<input id="userPwd2" name="userPwd2" class="easyui-textbox" data-options="required:true,value:'Mjj@1234',iconCls:'icon-reload'" style="width: 310px"> 
 				 -->
 			</td>
 		</tr>
 		<tr>
-			<td>订阅：</td>
-			<td colSpan="2" id="licenseTd">
+			<td >订阅：</td>
+			<td colSpan="2" id="licenseTd" >
 				<div th:each="list : ${session.licenseVo}" style="font-size: 12px">
-					<input class="easyui-checkbox" name="checkbox1" th:value="${list.skuId}" th:label="${list.skuPartNumber}" labelWidth="290px" ><br>
+					<input class="easyui-checkbox" name="checkbox2" th:value="${list.skuId}" th:label="${list.skuPartNumber}" labelWidth="290px" ><br>
 				</div>
 			</td>
 		</tr>
@@ -53,14 +65,14 @@
 			}
 		});
 	
-		$('#cc1').combobox({
+		$('#cc2').combobox({
 		    url:'/getDomains',
 		    valueField:'id',
 		    textField:'text',
 		    editable: false
 		});
 	
-		$('#userPwd').textbox({
+		$('#userPwd2').textbox({
 			required: true,
 			width: 310,
 			value: defaultPwd,
@@ -73,45 +85,54 @@
 		});
 		
 		function submitForm(){
-			var mailNickname = $('#prefix').val();
-			var userPrincipalName = $('#prefix').val() +  $('#cc1').combobox('getText');
-			var displayName = $('#displayName').val();
-			var userPwd = $('#userPwd').textbox('getText');
-			if(mailNickname==''||displayName==''){
+			var prefix1 = $('#prefix1').val();
+			var domain = $('#cc2').combobox('getText');
+			var count = $('#count').val();
+			var userPwd2 = $('#userPwd2').textbox('getText');
+			var strategy = $('#cc3').combobox('getValue');
+			
+			console.log('info:'+prefix1+','+domain+','+count+','+userPwd2+','+strategy);
+			
+			if(prefix1==''||count==''){
 		      	$.messager.show({
 					title:'错误',
 					msg: '参数不足',
 					timeout:2000,
 					showType:'slide'
 				});
-		      	$('#dlg3').dialog('close');
+		      	$('#dlg5').dialog('close');
 				return;
 			}
 			
-			var licenses = "";
-			$('input:checkbox[name=checkbox1]:checked').each(function(i){
+			var licenses2 = "";
+			$('input:checkbox[name=checkbox2]:checked').each(function(i){
 				if(0==i){
-					licenses = $(this).val();
+					licenses2 = $(this).val();
 				}else{
-					licenses += (","+$(this).val());
+					licenses2 += (","+$(this).val());
 				}
 			});
-			if(licenses==null){
+			if(licenses2==null){
 				console.log('未分配订阅');
 			}
 			else{
-				console.log('分配订阅为 '+licenses);
+				console.log('分配订阅为 '+licenses2);
 			}
-			
+			$.messager.show({
+				title:'提示',
+				msg:'批量创建用户请求已提交，完成的速度会根据用户数量的多少决定，完成时右下角会出现弹窗提醒',
+				timeout:2000,
+				showType:'slide'
+			}); 
 			$.ajax({
 			    type : "POST", 
-			    url : "/createOfficeUser",
-			    data : { "mailNickname": mailNickname, "userPrincipalName":userPrincipalName , "displayName": displayName, "licenses": licenses, 'userPwd': userPwd },
+			    url : "/massCreateOfficeUser",
+			    data : { "prefix": prefix1, "domain":domain , "count": count, "licenses": licenses2, "userPwd": userPwd2, "strategy": strategy },
 			    success : function(result) {
 			      	$.messager.show({
 						title:'结果',
 						msg: result,
-						timeout:2000,
+						timeout:10000,
 						showType:'slide'
 					});
 			      	$('#tb3').datagrid('reload');
@@ -126,10 +147,10 @@
 				}
 			});
 			
-			$('#dlg3').dialog('close');
+			$('#dlg5').dialog('close');
 		}
 		function clearForm(){
-			$('#dlg3').dialog('close');
+			$('#dlg5').dialog('close');
 		}
 		
 		function passwordGen() {
@@ -152,7 +173,7 @@
 		            charCount += 1;
 		        }
 		    }
-		    $('#userPwd').textbox('setText', randomstring);
+		    $('#userPwd2').textbox('setText', randomstring);
 		}
 	</script>
 	

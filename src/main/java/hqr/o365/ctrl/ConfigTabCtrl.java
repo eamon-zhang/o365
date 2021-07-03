@@ -1,5 +1,6 @@
 package hqr.o365.ctrl;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -8,19 +9,26 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 import hqr.o365.domain.LicenseInfo;
 import hqr.o365.domain.TaOfficeInfo;
 import hqr.o365.service.AddPassword;
 import hqr.o365.service.DeleteOfficeInfo;
+import hqr.o365.service.ExportAppInfo;
 import hqr.o365.service.GetDomainInfo;
 import hqr.o365.service.GetLicenseInfo;
 import hqr.o365.service.GetOfficeInfo;
+import hqr.o365.service.ImportAppInfo;
 import hqr.o365.service.SaveOfficeInfo;
 import hqr.o365.service.SwitchConfig;
 import hqr.o365.service.ValidateAppInfo;
@@ -52,9 +60,20 @@ public class ConfigTabCtrl {
 	@Autowired
 	private GetDomainInfo gdi;
 	
+	@Autowired
+	private ImportAppInfo iai;
+	
+	@Autowired
+	private ExportAppInfo eai;
+	
 	@RequestMapping(value = {"/tabs/config.html"})
 	public String dummy() {
 		return "tabs/config";
+	}
+	
+	@RequestMapping(value = {"/tabs/dialogs/import.html"})
+	public String dummy2() {
+		return "tabs/dialogs/import";
 	}
 	
 	@ResponseBody
@@ -113,9 +132,15 @@ public class ConfigTabCtrl {
 	
 	@ResponseBody
 	@RequestMapping(value = {"/delConfig"}, method = RequestMethod.POST)
-	public boolean delete(@RequestParam(name="seqNo") int seqNo) {
-		System.out.println("SeqNo:"+seqNo);
-		return di.delete(seqNo);
+	public String delete(@RequestParam(name="seqNos") String seqNos) {
+		HashMap<String, int[]> map = di.delete(seqNos);
+		int [] overall = map.get("delete_res");
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("配置删除成功:"+overall[0]+"<br>");
+		sb.append("配置删除失败:"+overall[1]+"<br>");
+		
+		return sb.toString();
 	}
 	
 	@ResponseBody
@@ -194,6 +219,37 @@ public class ConfigTabCtrl {
 		else {
 			return map.get("message");
 		}
+	}
+	
+	@ResponseBody
+	@RequestMapping(value = {"/importApps"}, method = RequestMethod.POST)
+	public String uploadApps(@RequestParam("fileNm") MultipartFile file) {
+		HashMap<String, int[]> map = iai.importApp(file);
+		int [] overall = map.get("import_res");
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("导入成功:"+overall[1]+"条<br>");
+		sb.append("导入失败:"+overall[2]+"条<br>");
+		return sb.toString();
+	}
+	
+	@RequestMapping(value = {"/exportApps"}, method = RequestMethod.GET)
+	public ResponseEntity<FileSystemResource> exportApps(){
+		eai.exportApp();
+		
+		return export(new File("export.csv"));
+	}
+	
+	public ResponseEntity<FileSystemResource> export(File file) { 
+		HttpHeaders headers = new HttpHeaders();
+	    headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
+	    headers.add("Content-Disposition", "attachment; filename=export.csv");
+	    headers.add("Pragma", "no-cache");
+	    headers.add("Expires", "0");
+	    headers.add("Last-Modified", new Date().toString());
+	    headers.add("ETag", String.valueOf(System.currentTimeMillis()));
+	 
+	    return ResponseEntity.ok().headers(headers) .contentLength(file.length()) .contentType(MediaType.parseMediaType("text/csv")) .body(new FileSystemResource(file));
 	}
 	
 }

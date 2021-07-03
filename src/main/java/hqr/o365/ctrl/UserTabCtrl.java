@@ -22,6 +22,7 @@ import hqr.o365.service.GetOfficeUser;
 import hqr.o365.service.GetOfficeUserByKeyWord;
 import hqr.o365.service.GetOfficeUserDefaultPwd;
 import hqr.o365.service.GetOfficeUserRole;
+import hqr.o365.service.MassCreateOfficeUser;
 import hqr.o365.service.UpdateOfficeUser;
 import hqr.o365.service.UpdateOfficeUserRole;
 
@@ -58,6 +59,9 @@ public class UserTabCtrl {
 	@Autowired
 	private GetOfficeUserDefaultPwd goud;
 	
+	@Autowired
+	private MassCreateOfficeUser mcou;
+	
 	@RequestMapping(value = {"/tabs/user.html"})
 	public String dummy() {
 		return "tabs/user";
@@ -79,6 +83,24 @@ public class UserTabCtrl {
 			System.out.println("licenseVo already exist,skip to get");
 		}
 		return "tabs/dialogs/createUser";
+	}
+	
+	@RequestMapping(value = {"tabs/dialogs/massCreateUser.html"})
+	public String dummyCreateUser2(HttpServletRequest req) {
+		Object tmp2 = req.getSession().getAttribute("licenseVo");
+		if(tmp2==null) {
+			HashMap<String, Object> map2 = gli.getLicenses();
+			List<LicenseInfo> vo = new ArrayList<LicenseInfo>();
+			Object obj = map2.get("licenseVo");
+			if(obj!=null) {
+				vo = (List<LicenseInfo>)obj;
+			}
+			req.getSession().setAttribute("licenseVo", vo);
+		}
+		else {
+			System.out.println("licenseVo already exist,skip to get");
+		}
+		return "tabs/dialogs/massCreateUser";
 	}
 	
 	@ResponseBody
@@ -145,12 +167,47 @@ public class UserTabCtrl {
 		HashMap<String, String> map = cou.createCommonUser(mailNickname, userPrincipalName, displayName, licenses, userPwd);
 		
 		return map.get("message");
+	}	
+	
+	@ResponseBody
+	@RequestMapping(value = {"/massCreateOfficeUser"}, method = RequestMethod.POST)
+	public String massCreateUser(@RequestParam(name="prefix") String prefix,
+			@RequestParam(name="domain") String domain,
+			@RequestParam(name="count") String countStr,
+			@RequestParam(name="licenses") String licenses,
+			@RequestParam(name="userPwd") String userPwd,
+			@RequestParam(name="strategy") String strategy) {
+		
+		int count = 10;
+		try {
+			count = Integer.parseInt(countStr);
+		}
+		catch (Exception e) {}
+		
+		HashMap<String, int[]> map = mcou.createCommonUser(prefix, domain, licenses, userPwd, count, strategy);
+		int [] overall1 = map.get("user_res");
+		int [] overall2 = map.get("license_res");
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("用户创建成功:"+overall1[1]+"<br>");
+		sb.append("用户创建失败:"+overall1[2]+"<br>");
+		sb.append("订阅分配成功:"+overall2[1]+"<br>");
+		sb.append("订阅分配失败:"+overall2[2]+"<br>");
+		
+		return sb.toString();
 	}
 	
 	@ResponseBody
 	@RequestMapping(value = {"/deleteOfficeUser"}, method = RequestMethod.POST)
-	public boolean deleteUser(@RequestParam(name="uid") String uid) {
-		return dou.deleteUser(uid);
+	public String deleteUser(@RequestParam(name="uids") String uids) {
+		HashMap<String, int[]> map = dou.deleteUser(uids);
+		int [] overall = map.get("delete_res");
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append("用户删除成功:"+overall[0]+"<br>");
+		sb.append("用户删除失败:"+overall[1]+"<br>");
+		
+		return sb.toString();
 	}
 	
 	@ResponseBody
@@ -161,8 +218,22 @@ public class UserTabCtrl {
 	
 	@ResponseBody
 	@RequestMapping(value = {"/updateOfficeUser"}, method = RequestMethod.POST)
-	public boolean patchUser(@RequestParam(name="uid") String uid, @RequestParam(name="accountEnabled") String accountEnabled) {
-		return uou.patchOfficeUser(uid, accountEnabled);
+	public String patchUser(@RequestParam(name="uids") String uids, @RequestParam(name="accountEnabled") String accountEnabled) {
+		HashMap<String, int[]> map = uou.patchOfficeUser(uids, accountEnabled);
+		
+		int [] overall = map.get("status_res");
+		
+		StringBuilder sb = new StringBuilder();
+		if("true".equals(accountEnabled)) {
+			sb.append("用户启用成功:"+overall[0]+"<br>");
+			sb.append("用户启用失败:"+overall[1]+"<br>");
+		}
+		else {
+			sb.append("用户禁用成功:"+overall[0]+"<br>");
+			sb.append("用户禁用失败:"+overall[1]+"<br>");
+		}
+		
+		return sb.toString();
 	}
 	
 	@ResponseBody
